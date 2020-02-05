@@ -21,14 +21,26 @@ class ReactiveApplicationTest extends AbstractTest {
     private static final String NAME2 = "Ekaterina";
 
     @Test
-    void getAccount() {
+    void getAccount_success() {
         ObjectId objectId = ObjectId.get();
         dao.save(createAccount(objectId, BigDecimal.TEN, NAME1)).block();
 
-        get("/api/account?id=" + objectId.toHexString()).then().statusCode(200)
+        get("/api/account?id=" + objectId.toHexString()).then()
+                .statusCode(200)
                 .assertThat()
                 .body("party.firstName", equalTo(NAME1));
     }
+
+    @Test
+    void getAccount_failNotFound() {
+        ObjectId objectId = ObjectId.get();
+
+        get("/api/account?id=" + objectId.toHexString()).then()
+                .statusCode(400)
+                .assertThat()
+                .body("message", equalTo("Not found"));
+    }
+
 
     @Test
     void createAccount_success() {
@@ -62,12 +74,7 @@ class ReactiveApplicationTest extends AbstractTest {
         ObjectId accountId2 = ObjectId.get();
         dao.save(createAccount(accountId2, BigDecimal.TEN, NAME2)).block();
 
-        with().body(
-                TransferDto.builder()
-                        .accountFromId(accountId1.toHexString())
-                        .accountToId(accountId2.toHexString())
-                        .sum(BigDecimal.ONE)
-                        .build())
+        with().body(createTransferDto(BigDecimal.ONE, accountId1, accountId2))
                 .when()
                 .request("POST", "/api/transfer")
                 .then()
@@ -91,12 +98,7 @@ class ReactiveApplicationTest extends AbstractTest {
         ObjectId accountId2 = ObjectId.get();
         dao.save(createAccount(accountId2, BigDecimal.ONE, NAME2)).block();
 
-        with().body(
-                TransferDto.builder()
-                        .accountFromId(accountId1.toHexString())
-                        .accountToId(accountId2.toHexString())
-                        .sum(BigDecimal.TEN)
-                        .build())
+        with().body(createTransferDto(BigDecimal.TEN, accountId1, accountId2))
                 .when()
                 .request("POST", "/api/transfer")
                 .then()
@@ -110,6 +112,20 @@ class ReactiveApplicationTest extends AbstractTest {
         get("/api/account?id=" + accountId2.toHexString()).then().statusCode(200)
                 .assertThat()
                 .body("balance", equalTo(1));
+    }
+
+    @Test
+    void transferMoney_failAccountNotFound() {
+        ObjectId accountId1 = ObjectId.get();
+        ObjectId accountId2 = ObjectId.get();
+
+        with().body(createTransferDto(BigDecimal.TEN, accountId1, accountId2))
+                .when()
+                .request("POST", "/api/transfer")
+                .then()
+                .statusCode(400)
+                .assertThat()
+                .body("message", equalTo("Not found"));
     }
 
     private Account createAccount(ObjectId id, BigDecimal balance, String firstName) {
@@ -128,6 +144,14 @@ class ReactiveApplicationTest extends AbstractTest {
                 .party(PersonDto.builder()
                         .firstName(firstName)
                         .build())
+                .build();
+    }
+
+    private TransferDto createTransferDto(BigDecimal balance, ObjectId id1, ObjectId id2) {
+        return TransferDto.builder()
+                .accountFromId(id1.toHexString())
+                .accountToId(id2.toHexString())
+                .sum(balance)
                 .build();
     }
 

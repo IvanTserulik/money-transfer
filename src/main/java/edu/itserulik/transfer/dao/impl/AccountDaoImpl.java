@@ -5,6 +5,7 @@ import com.mongodb.client.result.UpdateResult;
 import com.mongodb.reactivestreams.client.MongoCollection;
 import com.mongodb.reactivestreams.client.Success;
 import edu.itserulik.transfer.common.exception.NotEnoughMoneyException;
+import edu.itserulik.transfer.common.exception.NotFoundException;
 import edu.itserulik.transfer.dao.GenericDao;
 import edu.itserulik.transfer.db.CollectionClient;
 import edu.itserulik.transfer.model.document.Account;
@@ -28,7 +29,8 @@ public class AccountDaoImpl implements GenericDao<Account> {
     public Mono<Account> getById(String id) {
         var objectId = new ObjectId(id);
         var bsonDocument = new BsonDocument("_id", new BsonObjectId(objectId));
-        return Mono.from(mongoCollection.find(bsonDocument).first());
+        return Mono.from(mongoCollection.find(bsonDocument).first())
+                .switchIfEmpty(Mono.error(new NotFoundException()));
     }
 
     @Override
