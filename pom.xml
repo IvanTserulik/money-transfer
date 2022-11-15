@@ -20,7 +20,7 @@
         <flapdoodle.embed.mongo>2.2.0</flapdoodle.embed.mongo>
         <mongo.version>1.13.0</mongo.version>
         <slf4j.version>1.7.5</slf4j.version>
-        <jackson.version>2.10.1</jackson.version>
+        <jackson.version>2.12.7.1</jackson.version>
         <lombok.version>1.18.10</lombok.version>
         <junit.jupiter.version>5.6.0</junit.jupiter.version>
         <rest-assured.version>3.0.0</rest-assured.version>
